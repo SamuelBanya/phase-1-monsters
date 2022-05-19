@@ -1,7 +1,7 @@
 // DELIVERABLES:
 // COMPLETE: 1. When the page loads, show the first 50 monsters. Each monster's name, age, and description should be shown.
 // COMPLETE 2. Above your list of monsters, you should have a form to create a new monster. You should have fields for name, age, and description, and a 'Create Monster Button'. When you click the button, the monster should be added to the list and saved in the API.
-// IN-PROGRESS: 3. At the end of the list of monsters, show a button. When clicked, the button should load the next 50 monsters and show them.
+// COMPLETE: 3. At the end of the list of monsters, show a button. When clicked, the button should load the next 50 monsters and show them.
 
 // FINAL PRODUCT:
 // Monstr Inc
@@ -13,12 +13,13 @@
 // h4: (bold) Age: (age)
 // p: Bio: (bio)
 
-let minMonsterNum = 0;
-let maxMonsterNum = 0;
+let totalMonsters = 0;
+let pageNumber = 1;
+let pageLimit = 1;
 
 document.addEventListener("DOMContentLoaded", (e) => {
   createMonsterForm(e);
-  listFirst50Monsters(0);
+  listFirst50Monsters();
   let backButton = document.querySelector("#back");
   let forwardButton = document.querySelector("#forward");
   backButton.addEventListener("click", backButtonClick);
@@ -45,28 +46,19 @@ function createMonsterForm(e) {
 
     e.preventDefault();
 
-    console.log("createMonsterForm's submit button clicked");
     let monsterName = nameInput.value;
     let monsterAge = ageInput.value;
     let monsterDescription = descriptionInput.value;
 
-    console.log("monsterName: ", monsterName);
-    console.log("monsterAge: ", monsterAge);
-    console.log("monsterDescription: ", monsterDescription);
-
     let monsterNameHeader = document.createElement("h1");
     let monsterNameContent = monsterName;
     monsterNameHeader.textContent = monsterNameContent;
-    console.log("monsterNameHeader: ", monsterNameHeader);
 
     let ageHeader = document.createElement("h4");
-    // ageHeader.innerHTML = "<strong>age: " + obj[i]["age"] + "</strong>";
     ageHeader.innerHTML = `<strong>age: ${monsterAge}</strong>`;
-    console.log("ageHeader: ", ageHeader);
 
     let bioParagraph = document.createElement("p");
     bioParagraph.textContent = "Bio: " + monsterDescription;
-    console.log("bioParagraph: ", bioParagraph);
     let breakTag = document.createElement("br");
 
     monsterContainer.append(monsterNameHeader, ageHeader, bioParagraph, breakTag);
@@ -85,23 +77,17 @@ function createMonsterForm(e) {
     })
       .then((response) => response.json())
       .then((obj) => {
-        console.log("obj: ", obj);
-        console.log("typeof(obj): ", typeof(obj));
       })
       .catch((error) => {
-        console.log("error: ", error.message);
       });
   });
-
-  console.log("nameInput: ", nameInput);
-  console.log("ageInput: ", ageInput);
-  console.log("descriptionInput: ", descriptionInput);
   form.append(nameInput, ageInput, descriptionInput, submitButton);
   createMonsterContainer.append(form);
 }
 
-function listMonsters(minMonsterNum) {
+function listMonsters(pageNumber) {
   let monsterContainer = document.querySelector("#monster-container");
+  // Fetch request to determine total number of monsters on page:
   fetch("http://localhost:3000/monsters", {
     method: "GET",
     headers: {
@@ -110,58 +96,71 @@ function listMonsters(minMonsterNum) {
   })
     .then((response) => response.json())
     .then((obj) => {
-      console.log("obj: ", obj);
-      console.log("typeof(obj): ", typeof(obj));
-      maxMonsterNum = obj.length;
-      console.log("maxMonsterNum: ", maxMonsterNum);
-      for (let i = minMonsterNum; i < minMonsterNum + 50; i++) {
-        console.log("obj[" + i + "]: ", obj[i]);
+      totalMonsters = obj.length;
+    })
+    .catch((error) => {
+      console.log("error.message: ", error.message);
+    });
+  // Fetch request for 50 monsters per page:
+  fetch(`http://localhost:3000/monsters/?_limit=50&_page=${pageNumber}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => response.json())
+    .then((obj) => {
+      obj.forEach((monsterObj) => {
+        let monsterDiv = document.createElement("div");
+        monsterDiv.id = monsterObj["id"];
         let monsterNameHeader = document.createElement("h1");
-        let monsterNameContent = obj[i]["name"];
+        let monsterNameContent = monsterObj["name"];
         monsterNameHeader.textContent = monsterNameContent;
-        console.log("monsterNameHeader: ", monsterNameHeader);
 
         let ageHeader = document.createElement("h4");
-        ageHeader.innerHTML = `<strong>age: ${obj[i]["age"]}</strong>`;
-        console.log("ageHeader: ", ageHeader);
+        ageHeader.innerHTML = `<strong>age: ${monsterObj["age"]}</strong>`;
 
         let bioParagraph = document.createElement("p");
-        bioParagraph.textContent = "Bio: " + obj[i]["description"];
-        console.log("bioParagraph: ", bioParagraph);
+        bioParagraph.textContent = "Bio: " + monsterObj["description"];
 
         let breakTag = document.createElement("br");
+        monsterDiv.append(monsterNameHeader, ageHeader, bioParagraph, breakTag);
 
-        monsterContainer.append(monsterNameHeader, ageHeader, bioParagraph, breakTag);
-      }
+        monsterContainer.append(monsterDiv);
+      });
     })
     .catch((error) => {
       console.log("error.message: ", error.message);
     });
 }
 
-function listFirst50Monsters(minMonsterNum) {
-  listMonsters(0);
+function listFirst50Monsters() {
+  listMonsters(1);
 }
 
 function backButtonClick() {
-  console.log("backButtonClick() function called");
-  if (minMonsterNum > 0) {
+  if (pageNumber > 1) {
+    pageNumber -= 1;
     let monsterContainer = document.querySelector("#monster-container");
     monsterContainer.innerHTML = "";
-    minMonsterNum = minMonsterNum - 50;
-    listMonsters(minMonsterNum);
+    listMonsters(pageNumber);
+  }
+  else {
+    console.log("You have reached the first page, please use the forward button!");
   }
 }
 
 function forwardButtonClick() {
-  console.log("forwardButtonClick() function called");
-  // TODO: Fix the logic behind this if statement
-  if (minMonsterNum <= maxMonsterNum - 50) {
-    console.log("minMonsterNum: ", minMonsterNum);
-    console.log("maxMonsterNum: ", maxMonsterNum);
+  // Use .lastChildElement.id of the div of the last monster in the collection, if its less than the total amount in the collection, then continue
+  const lastElement = document.querySelector("#monster-container").lastElementChild.id;
+
+  if (lastElement < totalMonsters) {
+    pageNumber += 1;
+    listMonsters(pageNumber);
     let monsterContainer = document.querySelector("#monster-container");
     monsterContainer.innerHTML = "";
-    minMonsterNum = minMonsterNum + 50;
-    listMonsters(minMonsterNum);
+  }
+  else {
+    console.log("You have created the final page, please use the back button!");
   }
 }
