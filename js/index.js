@@ -68,7 +68,7 @@ function createMonsterForm(e) {
       breakTag
     );
 
-    fetch("https://phase-1-monsters-jsonserver.herokuapp.com/monsters", {
+    fetch("https://phase-1-monsters-jsonserver.onrender.com/monsters", {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -91,7 +91,7 @@ function createMonsterForm(e) {
 function listMonsters(pageNumber) {
   let monsterContainer = document.querySelector("#monster-container");
   // Fetch request to determine total number of monsters on page:
-  fetch("https://phase-1-monsters-jsonserver.herokuapp.com/monsters", {
+  fetch("https://phase-1-monsters-jsonserver.onrender.com/monsters", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -106,7 +106,7 @@ function listMonsters(pageNumber) {
     });
   // Fetch request for 50 monsters per page:
   fetch(
-    `https://phase-1-monsters-jsonserver.herokuapp.com/monsters/?_limit=50&_page=${pageNumber}`,
+    `https://phase-1-monsters-jsonserver.onrender.com/monsters/?_limit=50&_page=${pageNumber}`,
     {
       method: "GET",
       headers: {
